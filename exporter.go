@@ -16,6 +16,7 @@ const namespace = "chronos"
 
 type Exporter struct {
 	scraper      Scraper
+	mapper       *Mapper
 	duration     prometheus.Gauge
 	scrapeError  prometheus.Gauge
 	totalErrors  prometheus.Counter
@@ -133,17 +134,15 @@ func (e *Exporter) scrapeCounters(json *gabs.Container) {
 	}
 }
 
-func (e *Exporter) scrapeCounter(key string, json *gabs.Container) (bool, error) {
+func (e *Exporter) scrapeCounter(metric string, json *gabs.Container) (bool, error) {
 	data := json.Path("count").Data()
 	count, ok := data.(float64)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("Bad conversion! Unexpected value \"%v\" for counter %s\n", data, key))
+		return false, errors.New(fmt.Sprintf("Bad conversion! Unexpected value \"%v\" for counter %s\n", data, metric))
 	}
 
-	name, labels := renameMetric(key)
-	help := fmt.Sprintf(counterHelp, key)
-	counter, new := e.Counters.Fetch(name, help, labelKeys(labels)...)
-	counter.WithLabelValues(labelValues(labels)...).Set(count)
+	counter, new := e.mapper.counter(metric)
+	counter.With(e.mapper.labels(metric)).Set(count)
 	return new, nil
 }
 
@@ -159,17 +158,15 @@ func (e *Exporter) scrapeGauges(json *gabs.Container) {
 	}
 }
 
-func (e *Exporter) scrapeGauge(key string, json *gabs.Container) (bool, error) {
+func (e *Exporter) scrapeGauge(metric string, json *gabs.Container) (bool, error) {
 	data := json.Path("value").Data()
 	value, ok := data.(float64)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("Bad conversion! Unexpected value \"%v\" for gauge %s\n", data, key))
+		return false, errors.New(fmt.Sprintf("Bad conversion! Unexpected value \"%v\" for gauge %s\n", data, metric))
 	}
 
-	name, _ := renameMetric(key)
-	help := fmt.Sprintf(gaugeHelp, key)
-	gauge, new := e.Gauges.Fetch(name, help)
-	gauge.WithLabelValues().Set(value)
+	gauge, new := e.mapper.counter(metric)
+	gauge.With(e.mapper.labels(metric)).Set(value)
 	return new, nil
 }
 
@@ -185,27 +182,24 @@ func (e *Exporter) scrapeMeters(json *gabs.Container) {
 	}
 }
 
-func (e *Exporter) scrapeMeter(key string, json *gabs.Container) (bool, error) {
+func (e *Exporter) scrapeMeter(metric string, json *gabs.Container) (bool, error) {
 	count, ok := json.Path("count").Data().(float64)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("Bad meter! %s has no count\n", key))
+		return false, errors.New(fmt.Sprintf("Bad meter! %s has no count\n", metric))
 	}
 	units, ok := json.Path("units").Data().(string)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("Bad meter! %s has no units\n", key))
+		return false, errors.New(fmt.Sprintf("Bad meter! %s has no units\n", metric))
 	}
 
-	name, _ := renameMetric(key)
-	help := fmt.Sprintf(meterHelp, key, units)
-	counter, new := e.Counters.Fetch(name+"_count", help)
+	counter, rates, new := e.mapper.meter(metric, units)
 	counter.WithLabelValues().Set(count)
 
-	gauge, _ := e.Gauges.Fetch(name, help, "rate")
 	properties, _ := json.ChildrenMap()
 	for key, property := range properties {
 		if strings.Contains(key, "rate") {
 			if value, ok := property.Data().(float64); ok {
-				gauge.WithLabelValues(renameRate(key)).Set(value)
+				rates.WithLabelValues(renameRate(key)).Set(value)
 			}
 		}
 	}
@@ -225,45 +219,38 @@ func (e *Exporter) scrapeHistograms(json *gabs.Container) {
 	}
 }
 
-func (e *Exporter) scrapeHistogram(key string, json *gabs.Container) (bool, error) {
+func (e *Exporter) scrapeHistogram(metric string, json *gabs.Container) (bool, error) {
 	count, ok := json.Path("count").Data().(float64)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("Bad historgram! %s has no count\n", key))
+		return false, errors.New(fmt.Sprintf("Bad historgram! %s has no count\n", metric))
 	}
 
-	name, labels := renameMetric(key)
-	help := fmt.Sprintf(histogramHelp, key)
-	counter, new := e.Counters.Fetch(name+"_count", help, labelKeys(labels)...)
-	counter.WithLabelValues(labelValues(labels)...).Set(count)
-
-	percentiles, _ := e.Gauges.Fetch(name, help, labelKeys(labels, "percentile")...)
-	max, _ := e.Gauges.Fetch(name+"_max", help, labelKeys(labels)...)
-	mean, _ := e.Gauges.Fetch(name+"_mean", help, labelKeys(labels)...)
-	min, _ := e.Gauges.Fetch(name+"_min", help, labelKeys(labels)...)
-	stddev, _ := e.Gauges.Fetch(name+"_stddev", help, labelKeys(labels)...)
+	counter, percentiles, min, max, mean, stddev, new := e.mapper.histogram(metric)
+	counter.With(e.mapper.labels(metric)).Set(count)
 
 	properties, _ := json.ChildrenMap()
 	for key, property := range properties {
 		switch key {
 		case "p50", "p75", "p95", "p98", "p99", "p999":
 			if value, ok := property.Data().(float64); ok {
-				percentiles.WithLabelValues(labelValues(labels, "0."+key[1:])...).Set(value)
+				percentiles.WithLabelValues(
+					e.mapper.labelValues(metric, "0."+key[1:])...).Set(value)
 			}
 		case "min":
 			if value, ok := property.Data().(float64); ok {
-				min.WithLabelValues(labelValues(labels)...).Set(value)
+				min.With(e.mapper.labels(metric)).Set(value)
 			}
 		case "max":
 			if value, ok := property.Data().(float64); ok {
-				max.WithLabelValues(labelValues(labels)...).Set(value)
+				max.With(e.mapper.labels(metric)).Set(value)
 			}
 		case "mean":
 			if value, ok := property.Data().(float64); ok {
-				mean.WithLabelValues(labelValues(labels)...).Set(value)
+				mean.With(e.mapper.labels(metric)).Set(value)
 			}
 		case "stddev":
 			if value, ok := property.Data().(float64); ok {
-				stddev.WithLabelValues(labelValues(labels)...).Set(value)
+				stddev.With(e.mapper.labels(metric)).Set(value)
 			}
 		}
 	}
@@ -283,27 +270,18 @@ func (e *Exporter) scrapeTimers(json *gabs.Container) {
 	}
 }
 
-func (e *Exporter) scrapeTimer(key string, json *gabs.Container) (bool, error) {
+func (e *Exporter) scrapeTimer(metric string, json *gabs.Container) (bool, error) {
 	count, ok := json.Path("count").Data().(float64)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("Bad timer! %s has no count\n", key))
+		return false, errors.New(fmt.Sprintf("Bad timer! %s has no count\n", metric))
 	}
 	units, ok := json.Path("rate_units").Data().(string)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("Bad timer! %s has no units\n", key))
+		return false, errors.New(fmt.Sprintf("Bad timer! %s has no units\n", metric))
 	}
 
-	name, _ := renameMetric(key)
-	help := fmt.Sprintf(timerHelp, key, units)
-	counter, new := e.Counters.Fetch(name+"_count", help)
+	counter, rates, percentiles, min, max, mean, stddev, new := e.mapper.timer(metric, units)
 	counter.WithLabelValues().Set(count)
-
-	rates, _ := e.Gauges.Fetch(name+"_rate", help, "rate")
-	percentiles, _ := e.Gauges.Fetch(name, help, "percentile")
-	min, _ := e.Gauges.Fetch(name+"_min", help)
-	max, _ := e.Gauges.Fetch(name+"_max", help)
-	mean, _ := e.Gauges.Fetch(name+"_mean", help)
-	stddev, _ := e.Gauges.Fetch(name+"_stddev", help)
 
 	properties, _ := json.ChildrenMap()
 	for key, property := range properties {
@@ -339,33 +317,15 @@ func (e *Exporter) scrapeTimer(key string, json *gabs.Container) (bool, error) {
 	return new, nil
 }
 
-func labelKeys(labels map[string]string, extraKeys ...string) (keys []string) {
-	keys = make([]string, 0, len(labels)+len(extraKeys))
-	for k := range labels {
-		keys = append(keys, k)
-	}
-	for _, k := range extraKeys {
-		keys = append(keys, k)
-	}
-	return
-}
-
-func labelValues(labels map[string]string, extraVals ...string) (vals []string) {
-	vals = make([]string, 0, len(labels)+len(extraVals))
-	for _, v := range labels {
-		vals = append(vals, v)
-	}
-	for _, v := range extraVals {
-		vals = append(vals, v)
-	}
-	return
-}
-
 func NewExporter(s Scraper) *Exporter {
+	counters := NewCounterContainer()
+	gauges := NewGaugeContainer()
+	mapper := &Mapper{counters, gauges}
 	return &Exporter{
 		scraper:  s,
-		Counters: NewCounterContainer(),
-		Gauges:   NewGaugeContainer(),
+		mapper:   mapper,
+		Counters: counters,
+		Gauges:   gauges,
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: "exporter",
