@@ -150,7 +150,7 @@ func Test_export_histograms(t *testing.T) {
 		regexp.MustCompile("chronos_foo_histogram_mean 1"),
 		regexp.MustCompile("chronos_foo_histogram_stddev 1"),
 		regexp.MustCompile("chronos_foo_histogram{percentile=\"0\\.\\d+\"} 1"),
-		regexp.MustCompile("chronos_jobs_run_time_count{job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_total{job=\"bar\"} 2"),
 		regexp.MustCompile("chronos_jobs_run_time_max{job=\"bar\"} 2"),
 		regexp.MustCompile("chronos_jobs_run_time_min{job=\"bar\"} 2"),
 		regexp.MustCompile("chronos_jobs_run_time_mean{job=\"bar\"} 2"),

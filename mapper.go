@@ -42,7 +42,15 @@ func (m *Mapper) meter(metric string, units string) (*prometheus.CounterVec, *pr
 func (m *Mapper) histogram(metric string) (*prometheus.CounterVec, *prometheus.GaugeVec, *prometheus.GaugeVec, *prometheus.GaugeVec, *prometheus.GaugeVec, *prometheus.GaugeVec, bool) {
 	name, _ := renameMetric(metric)
 	help := fmt.Sprintf(histogramHelp, metric)
-	counter, new := m.Counters.Fetch(name+"_count", help, m.labelKeys(metric)...)
+
+	var new bool
+	var counter *prometheus.CounterVec
+	if strings.HasPrefix(name, "jobs_run_time") {
+		// align this name with the other jobs_run_(success|failure) counters"
+		counter, new = m.Counters.Fetch("jobs_run_total", help, m.labelKeys(metric)...)
+	} else {
+		counter, new = m.Counters.Fetch(name+"_count", help, m.labelKeys(metric)...)
+	}
 
 	percentiles, _ := m.Gauges.Fetch(name, help, m.labelKeys(metric, "percentile")...)
 	min, _ := m.Gauges.Fetch(name+"_min", help, m.labelKeys(metric)...)
