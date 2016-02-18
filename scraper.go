@@ -36,7 +36,7 @@ func (s *scraper) Scrape() ([]byte, error) {
 		return nil, err
 	}
 
-	response.Body.Close()
+	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
