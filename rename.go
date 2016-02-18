@@ -20,8 +20,8 @@ func renameRate(originalRate string) (name string) {
 }
 
 var (
-	metric_name_symbol_repl_expr = regexp.MustCompile(`[\.\$\-\(\)]`)
-	chronos_jobs_capture_expr    = regexp.MustCompile(`jobs\.run\.(\w+)\.([\w-]+)`)
+	metric_symbol_repl_expr   = regexp.MustCompile(`[\.\$\-\(\)]`)
+	chronos_jobs_capture_expr = regexp.MustCompile(`jobs\.run\.(\w+)\.([\w-]+)`)
 )
 
 func renameMetric(name string) (string, map[string]string) {
@@ -33,7 +33,7 @@ func renameMetric(name string) (string, map[string]string) {
 		labels["job"] = captures[2]
 	}
 
-	name = metric_name_symbol_repl_expr.ReplaceAllLiteralString(name, "_")
+	name = metric_symbol_repl_expr.ReplaceAllLiteralString(name, "_")
 	name = strings.TrimRight(name, "_")
 	name = strings.ToLower(name)
 	return name, labels
