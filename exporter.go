@@ -14,10 +14,6 @@ import (
 
 const namespace = "chronos"
 
-type Scraper interface {
-	Scrape() ([]byte, error)
-}
-
 type Exporter struct {
 	scraper      Scraper
 	duration     prometheus.Gauge

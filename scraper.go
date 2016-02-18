@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+type Scraper interface {
+	Scrape() ([]byte, error)
+}
+
 type scraper struct {
 	uri *url.URL
 }
