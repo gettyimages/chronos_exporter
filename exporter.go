@@ -133,10 +133,10 @@ func (e *Exporter) scrapeCounter(key string, json *gabs.Container) (prometheus.C
 		return nil, errors.New(fmt.Sprintf("Bad conversion! Unexpected value \"%v\" for counter %s\n", data, key))
 	}
 
-	name := renameMetric(key)
+	name, labels := renameMetric(key)
 	help := fmt.Sprintf(counterHelp, key)
-	counter, new := e.Counters.Fetch(name, help)
-	counter.WithLabelValues().Set(count)
+	counter, new := e.Counters.Fetch(name, help, labelKeys(labels)...)
+	counter.WithLabelValues(labelValues(labels)...).Set(count)
 	if new {
 		log.Infof("Added counter %s with initial count %v\n", name, count)
 	}
@@ -162,7 +162,7 @@ func (e *Exporter) scrapeGauge(key string, json *gabs.Container) (prometheus.Col
 		return nil, errors.New(fmt.Sprintf("Bad conversion! Unexpected value \"%v\" for gauge %s\n", data, key))
 	}
 
-	name := renameMetric(key)
+	name, _ := renameMetric(key)
 	help := fmt.Sprintf(gaugeHelp, key)
 	gauge, new := e.Gauges.Fetch(name, help)
 	gauge.WithLabelValues().Set(value)
@@ -196,7 +196,7 @@ func (e *Exporter) scrapeMeter(key string, json *gabs.Container) ([]prometheus.C
 		return nil, errors.New(fmt.Sprintf("Bad meter! %s has no units\n", key))
 	}
 
-	name := renameMetric(key)
+	name, _ := renameMetric(key)
 	help := fmt.Sprintf(meterHelp, key, units)
 	counter, new := e.Counters.Fetch(name+"_count", help)
 	counter.WithLabelValues().Set(count)
@@ -238,39 +238,39 @@ func (e *Exporter) scrapeHistogram(key string, json *gabs.Container) ([]promethe
 		return nil, errors.New(fmt.Sprintf("Bad historgram! %s has no count\n", key))
 	}
 
-	name := renameMetric(key)
+	name, labels := renameMetric(key)
 	help := fmt.Sprintf(histogramHelp, key)
-	counter, new := e.Counters.Fetch(name+"_count", help)
-	counter.WithLabelValues().Set(count)
+	counter, new := e.Counters.Fetch(name+"_count", help, labelKeys(labels)...)
+	counter.WithLabelValues(labelValues(labels)...).Set(count)
 
-	percentiles, _ := e.Gauges.Fetch(name, help, "percentile")
-	max, _ := e.Gauges.Fetch(name+"_max", help)
-	mean, _ := e.Gauges.Fetch(name+"_mean", help)
-	min, _ := e.Gauges.Fetch(name+"_min", help)
-	stddev, _ := e.Gauges.Fetch(name+"_stddev", help)
+	percentiles, _ := e.Gauges.Fetch(name, help, labelKeys(labels, "percentile")...)
+	max, _ := e.Gauges.Fetch(name+"_max", help, labelKeys(labels)...)
+	mean, _ := e.Gauges.Fetch(name+"_mean", help, labelKeys(labels)...)
+	min, _ := e.Gauges.Fetch(name+"_min", help, labelKeys(labels)...)
+	stddev, _ := e.Gauges.Fetch(name+"_stddev", help, labelKeys(labels)...)
 
 	properties, _ := json.ChildrenMap()
 	for key, property := range properties {
 		switch key {
 		case "p50", "p75", "p95", "p98", "p99", "p999":
 			if value, ok := property.Data().(float64); ok {
-				percentiles.WithLabelValues("0." + key[1:]).Set(value)
+				percentiles.WithLabelValues(labelValues(labels, "0."+key[1:])...).Set(value)
 			}
 		case "min":
 			if value, ok := property.Data().(float64); ok {
-				min.WithLabelValues().Set(value)
+				min.WithLabelValues(labelValues(labels)...).Set(value)
 			}
 		case "max":
 			if value, ok := property.Data().(float64); ok {
-				max.WithLabelValues().Set(value)
+				max.WithLabelValues(labelValues(labels)...).Set(value)
 			}
 		case "mean":
 			if value, ok := property.Data().(float64); ok {
-				mean.WithLabelValues().Set(value)
+				mean.WithLabelValues(labelValues(labels)...).Set(value)
 			}
 		case "stddev":
 			if value, ok := property.Data().(float64); ok {
-				stddev.WithLabelValues().Set(value)
+				stddev.WithLabelValues(labelValues(labels)...).Set(value)
 			}
 		}
 	}
@@ -306,7 +306,7 @@ func (e *Exporter) scrapeTimer(key string, json *gabs.Container) ([]prometheus.C
 		return nil, errors.New(fmt.Sprintf("Bad timer! %s has no units\n", key))
 	}
 
-	name := renameMetric(key)
+	name, _ := renameMetric(key)
 	help := fmt.Sprintf(timerHelp, key, units)
 	counter, new := e.Counters.Fetch(name+"_count", help)
 	counter.WithLabelValues().Set(count)
@@ -354,6 +354,28 @@ func (e *Exporter) scrapeTimer(key string, json *gabs.Container) ([]prometheus.C
 	}
 
 	return []prometheus.Collector{counter, rates, percentiles, max, mean, min, stddev}, nil
+}
+
+func labelKeys(labels map[string]string, extraKeys ...string) (keys []string) {
+	keys = make([]string, 0, len(labels)+len(extraKeys))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	for _, k := range extraKeys {
+		keys = append(keys, k)
+	}
+	return
+}
+
+func labelValues(labels map[string]string, extraVals ...string) (vals []string) {
+	vals = make([]string, 0, len(labels)+len(extraVals))
+	for _, v := range labels {
+		vals = append(vals, v)
+	}
+	for _, v := range extraVals {
+		vals = append(vals, v)
+	}
+	return
 }
 
 func NewExporter(s Scraper) *Exporter {

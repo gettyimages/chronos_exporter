@@ -4,34 +4,62 @@ import "testing"
 
 func Test_rename_metric(t *testing.T) {
 	cases := []struct {
-		name   string
+		source string
 		expect string
 	}{
 		{
-			name:   "Foo",
+			source: "Foo",
 			expect: "foo",
 		}, {
-			name:   "foo_bar",
+			source: "foo_bar",
 			expect: "foo_bar",
 		}, {
-			name:   "foo.bar",
+			source: "foo.bar",
 			expect: "foo_bar",
 		}, {
-			name:   "foo-bar",
+			source: "foo-bar",
 			expect: "foo_bar",
 		}, {
-			name:   "foo$bar",
+			source: "foo$bar",
 			expect: "foo_bar",
 		}, {
-			name:   "foo(bar)",
+			source: "foo(bar)",
 			expect: "foo_bar",
 		},
 	}
 
 	for _, c := range cases {
-		name := renameMetric(c.name)
+		name, _ := renameMetric(c.source)
 		if name != c.expect {
 			t.Errorf("expected metric named %s, got %s", c.expect, name)
+		}
+	}
+}
+
+func Test_rename_jobs_metric(t *testing.T) {
+	cases := []struct {
+		source string
+		expect string
+		labels map[string]string
+	}{
+		{
+			source: "jobs.run.foo.bar",
+			expect: "jobs_run_foo",
+			labels: map[string]string{
+				"job": "bar",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		metricName, labels := renameMetric(c.source)
+		if metricName != c.expect {
+			t.Errorf("expected rate named %s, but was %s", c.expect, metricName)
+		}
+		for labelName, labelValue := range labels {
+			if expectValue := c.labels[labelName]; labelValue != expectValue {
+				t.Errorf("expected %s value %s, but was %s", labelName, expectValue, labelValue)
+			}
 		}
 	}
 }

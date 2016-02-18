@@ -64,7 +64,7 @@ func Test_export_counters(t *testing.T) {
 	results, err := export(`{
 		"counters": {
 			"foo_count": {"count": 1},
-			"bar_count": {"count": 2}
+			"jobs.run.success.bar": {"count": 2}
 		}
 	}`)
 	if err != nil {
@@ -74,7 +74,7 @@ func Test_export_counters(t *testing.T) {
 	//t.Log(string(results))
 	for _, re := range []*regexp.Regexp{
 		regexp.MustCompile("chronos_foo_count 1"),
-		regexp.MustCompile("chronos_bar_count 2"),
+		regexp.MustCompile("chronos_jobs_run_success{job=\"bar\"} 2"),
 	} {
 		if !re.Match(results) {
 			t.Errorf("No counter matching pattern: %s\n", re)
@@ -134,7 +134,7 @@ func Test_export_histograms(t *testing.T) {
 	results, err := export(`{
 		"histograms": {
 			"foo_histogram": {"count":1,"p50":1,"p75":1,"p95":1,"p98":1,"p99":1,"p999":1,"max":1,"mean":1,"min":1,"stddev":1},
-			"bar_histogram": {"count":2,"p50":2,"p75":2,"p95":2,"p98":2,"p99":2,"p999":2,"max":2,"mean":2,"min":2,"stddev":2}
+			"jobs.run.time.bar": {"count":2,"p50":2,"p75":2,"p95":2,"p98":2,"p99":2,"p999":2,"max":2,"mean":2,"min":2,"stddev":2}
 		}
 	}`)
 
@@ -150,12 +150,12 @@ func Test_export_histograms(t *testing.T) {
 		regexp.MustCompile("chronos_foo_histogram_mean 1"),
 		regexp.MustCompile("chronos_foo_histogram_stddev 1"),
 		regexp.MustCompile("chronos_foo_histogram{percentile=\"0\\.\\d+\"} 1"),
-		regexp.MustCompile("chronos_bar_histogram_count 2"),
-		regexp.MustCompile("chronos_bar_histogram_max 2"),
-		regexp.MustCompile("chronos_bar_histogram_min 2"),
-		regexp.MustCompile("chronos_bar_histogram_mean 2"),
-		regexp.MustCompile("chronos_bar_histogram_stddev 2"),
-		regexp.MustCompile("chronos_bar_histogram{percentile=\"0\\.\\d+\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_count{job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_max{job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_min{job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_mean{job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_stddev{job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time{job=\"bar\",percentile=\"0\\.\\d+\"} 2"),
 	} {
 		if !re.Match(results) {
 			t.Errorf("No histogram metric matching pattern: %s\n", re)
