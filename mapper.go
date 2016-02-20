@@ -111,7 +111,7 @@ func renameMetric(name string) (string, map[string]string) {
 	captures := chronos_jobs_capture_expr.FindStringSubmatch(name)
 	if len(captures) == 3 {
 		name = "jobs_run_" + captures[1]
-		labels["job"] = captures[2]
+		labels["chronos_job"] = captures[2]
 	}
 
 	name = metric_symbol_repl_expr.ReplaceAllLiteralString(name, "_")

@@ -74,7 +74,7 @@ func Test_export_counters(t *testing.T) {
 	//t.Log(string(results))
 	for _, re := range []*regexp.Regexp{
 		regexp.MustCompile("chronos_foo_count 1"),
-		regexp.MustCompile("chronos_jobs_run_success{job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_success{chronos_job=\"bar\"} 2"),
 	} {
 		if !re.Match(results) {
 			t.Errorf("No counter matching pattern: %s\n", re)
@@ -150,12 +150,12 @@ func Test_export_histograms(t *testing.T) {
 		regexp.MustCompile("chronos_foo_histogram_mean 1"),
 		regexp.MustCompile("chronos_foo_histogram_stddev 1"),
 		regexp.MustCompile("chronos_foo_histogram{percentile=\"0\\.\\d+\"} 1"),
-		regexp.MustCompile("chronos_jobs_run_total{job=\"bar\"} 2"),
-		regexp.MustCompile("chronos_jobs_run_time_max{job=\"bar\"} 2"),
-		regexp.MustCompile("chronos_jobs_run_time_min{job=\"bar\"} 2"),
-		regexp.MustCompile("chronos_jobs_run_time_mean{job=\"bar\"} 2"),
-		regexp.MustCompile("chronos_jobs_run_time_stddev{job=\"bar\"} 2"),
-		regexp.MustCompile("chronos_jobs_run_time{job=\"bar\",percentile=\"0\\.\\d+\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_total{chronos_job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_max{chronos_job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_min{chronos_job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_mean{chronos_job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time_stddev{chronos_job=\"bar\"} 2"),
+		regexp.MustCompile("chronos_jobs_run_time{chronos_job=\"bar\",percentile=\"0\\.\\d+\"} 2"),
 	} {
 		if !re.Match(results) {
 			t.Errorf("No histogram metric matching pattern: %s\n", re)

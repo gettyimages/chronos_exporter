@@ -46,7 +46,7 @@ func Test_rename_jobs_metric(t *testing.T) {
 			source: "jobs.run.foo.bar",
 			expect: "jobs_run_foo",
 			labels: map[string]string{
-				"job": "bar",
+				"chronos_job": "bar",
 			},
 		},
 	}
