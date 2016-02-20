@@ -17,8 +17,8 @@ release: clean
 	GOARCH=amd64 GOOS=linux go build -ldflags "-X main.Version=$(VERSION)" -o bin/$(TARGET) .
 
 publish: release
-#	docker build -t gettyimages/$(TARGET):$(VERSION) .
-#	docker push gettyimages/$(TARGET):$(VERSION)
+	docker build -t gettyimages/$(TARGET):$(VERSION) .
+	docker push gettyimages/$(TARGET):$(VERSION)
 	docker tag gettyimages/$(TARGET):$(VERSION) gettyimages/$(TARGET):latest
 	docker push gettyimages/$(TARGET):latest
 
