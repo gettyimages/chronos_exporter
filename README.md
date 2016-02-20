@@ -1,6 +1,6 @@
-# Mesos Prometheus Exporter
+# Chronos Prometheus Exporter
 
-[Chronos](https://mesos.github.io/chronos) metrics exporter for [Prometheus](http://prometheus.io)
+A [Prometheus](http://prometheus.io) metrics exporter for the [Chronos](https://mesos.github.io/chronos) Mesos framework.
 
 This exporter exposes Chronos' Codahale/Dropwizard metrics via its `/metrics` endpoint.
 
