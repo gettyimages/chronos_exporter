@@ -1,4 +1,4 @@
-VERSION  := 0.2.1
+VERSION  := $$(git describe --tags --always)
 TARGET   := chronos_exporter
 TEST     ?= ./...
 
