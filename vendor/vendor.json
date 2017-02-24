@@ -3,16 +3,46 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "DWPL08pD/SQ2GzLfoR7ZXnjj7Sw=",
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "4b6ea7319e214d98c938f12692336f7ca9348d6b",
+			"revisionTime": "2016-03-17T14:11:10Z"
+		},
+		{
+			"checksumSHA1": "spyv5/YFBjYyZLZa1U2LBfDR8PM=",
+			"path": "github.com/beorn7/perks/quantile",
+			"revision": "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9",
+			"revisionTime": "2016-08-04T10:47:26Z"
+		},
+		{
+			"checksumSHA1": "XnbEHQRzINRKXKmu9GcaqGkK4Lg=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "f592bd283e9ef86337a432eb50e592278c3d534d",
+			"revisionTime": "2016-08-17T17:41:13Z"
+		},
+		{
 			"checksumSHA1": "17v7y+3r/KG8PPYIolf+zSAifbs=",
 			"path": "github.com/jeffail/gabs",
 			"revision": "855034b6b7a3b7144977efcaefe72d2c64b0d039",
 			"revisionTime": "2016-08-09T16:55:30Z"
 		},
 		{
+			"checksumSHA1": "bKMZjd2wPw13VwoE7mBeSv5djFA=",
+			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
+			"revision": "c12348ce28de40eed0136aa2b644d0ee0650e56c",
+			"revisionTime": "2016-04-24T11:30:07Z"
+		},
+		{
 			"checksumSHA1": "Ph+qmEo8RdBKBHZUhx0y5Oyk/U0=",
 			"path": "github.com/prometheus/client_golang/prometheus",
 			"revision": "334af0119a8f8fb6af5bb950d535c482cac7f836",
 			"revisionTime": "2016-10-17T12:35:36Z"
+		},
+		{
+			"checksumSHA1": "DvwvOlPNAgRntBzt3b3OSRMS2N4=",
+			"path": "github.com/prometheus/client_model/go",
+			"revision": "fa8ad6fec33561be4280a8f0514318c79d7f6cb6",
+			"revisionTime": "2015-02-12T10:17:44Z"
 		},
 		{
 			"checksumSHA1": "OFZ6f2tsxQ+pk+wl7474eIxBs80=",
@@ -29,6 +59,12 @@
 		{
 			"checksumSHA1": "fKMoxZehNhXbklRQy7lpFAVH0XY=",
 			"path": "github.com/prometheus/common/log",
+			"revision": "ebdfc6da46522d58825777cf1f90490a5b1ef1d8",
+			"revisionTime": "2016-08-01T17:19:55Z"
+		},
+		{
+			"checksumSHA1": "Jx0GXl5hGnO25s3ryyvtdWHdCpw=",
+			"path": "github.com/prometheus/common/model",
 			"revision": "ebdfc6da46522d58825777cf1f90490a5b1ef1d8",
 			"revisionTime": "2016-08-01T17:19:55Z"
 		},
