@@ -98,7 +98,6 @@ func (e *Exporter) scrapeMetrics(json *gabs.Container, ch chan<- prometheus.Metr
 			} else {
 				gauge, _ := e.Gauges.Fetch("metrics_version", "Chronos metrics version", "version")
 				gauge.WithLabelValues(version).Set(1)
-				gauge.Collect(ch)
 			}
 
 		case "counters":
