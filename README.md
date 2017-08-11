@@ -32,7 +32,7 @@ Usage of chronos_exporter:
   -chronos.uri string
         URI of Chronos (default "http://chronos.mesos:4400")
   -web.listen-address string
-        Address to listen on for web interface and telemetry. (default ":9099")
+        Address to listen on for web interface and telemetry. (default ":9044")
   -web.telemetry-path string
         Path under which to expose metrics. (default "/metrics")
   -log.format value
